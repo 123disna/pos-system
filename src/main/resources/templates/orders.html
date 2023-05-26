@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:height="http://www.w3.org/1999/xhtml"
+      xmlns:background-color="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Form</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body style="margin-left:100px; background-color:black;margin-top:100px">
+<div class="header" style="display: flex;
+    height: 70px;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    justify-content: space-between;
+    border-bottom: 2px solid lightgray;
+    background-color: black;">
+    <div class="middle" style="display: flex;
+                               align-items: center;
+                               justify-content: space-between;
+                               font-size: 20px;">
+        <a href="#" style="margin-right: 120px; text-decoration: none; color: white; margin-left:100px;">Point of Sale System</a>
+        <a th:href="@{/items}" style="margin-right: 120px; text-decoration: none; color: white">Item Management</a>
+        <a th:href="@{/order_list}" style="margin-right: 120px; text-decoration: none; color: white">Order Management</a>
+        <a th:href="@{/customers}" style="margin-right: 120px; text-decoration: none; color: white">Customer Management</a>
+    </div>
+</div>
+
+ <div style="background-color:orange; border-style: dotted; margin-left:50px; margin-right:100px; padding:20px; border-width: 3px; border-color: black;">
+  <h1 align="center">Order Form</h1>
+     <form>
+    <label>All Customers with ID : </label>
+    <select type="number"
+            name="customers"
+            th:field="*{customers}"
+            class="form-control">
+        <option value="">All Customers</option>
+        <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name} + ' (ID: ' + ${c.id} + ')'"></option>
+    </select>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <label>Item Details : </label>
+    <select type="number"
+            name="items"
+            th:field="*{items}"
+            class="form-control">
+        <option value="">All Items</option>
+        <option th:each="i : ${items}" th:value="${i.itemId}" th:text="${i.itemName} + ' (price: ' + ${i.sellingPrice} + ', ID:' + ${i.itemId} + ')'"></option>
+      </select><br><br>
+     </form>
+   <form action="#" th:action="@{/saveOrder}" th:object="${order}" method="post" id="myForm">
+
+    <label>Customer ID</label>
+    <input
+            style="width:100px;"
+            type="number"
+            name="customer"
+            th:field="*{customer}"
+            class="form-control"
+            placeholder="Enter ID"/>
+       &nbsp;
+       <button type="button" style="background-color: green; color:white; margin-top:10px; margin-right:75px; height:25px; border-radius: 5px;"><a th:href="@{/customers/new}" style="color:white; text-decoration: none;">Add Customer</a></button>
+
+    <label>Order Date</label>
+    <input
+            type="date"
+            name="date"
+            style="margin-right:75px;"
+            th:field="*{date}"
+            class="form-control"/>
+
+    <hr>
+    <div class="row" >
+        <div class="col" style="width: 18%; display: inline-block; margin-left: 20px;">Item Name</div>
+        <div class="col" style="width: 18%; display: inline-block; margin-left: 20px;">Unit Price</div>
+        <div class="col" style="width: 18%; display: inline-block; margin-left: 20px;">Quantity</div>
+        <div class="col" style="width: 18%; display: inline-block; margin-left: 10px;">Amount</div>
+        <div class="col" style="width: 18%; display: inline-block;">Item ID</div></div>
+
+    <div id="orderDetails">
+        <div class="row" >
+            <div class="col" style="width: 18%; display: inline-block;">
+                <input type="text" id="itemName" name="orderDetailsSaveDTOS[0].itemName" class="form-control" placeholder="Enter item name" required style="height:23px;">
+            </div>
+            <div class="col" style="width: 18%; display: inline-block;">
+                <input type="number" name="sellPrice" class="form-control" placeholder="Enter price" required style="height:23px;" >
+            </div>
+            <div class="col" style="width: 18%; display: inline-block;">
+                <input type="number" name="orderDetailsSaveDTOS[0].qty" class="form-control" placeholder="Enter quantity" required style="height:23px;" >
+            </div>
+            <div class="col" style="width: 18%; display: inline-block;">
+                <input type="number" name="orderDetailsSaveDTOS[0].amount" class="form-control" placeholder="Enter amount" required style="height:23px;" oninput="updateTotalAmount(this.value)">
+            </div>
+            <div class="col" style="width: 18%; display: inline-block;">
+                <input type="number" name="orderDetailsSaveDTOS[0].item" class="form-control" placeholder="Enter ID" required style="height:23px;">
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <button type="button" style="background-color: green; color:white; margin-top:10px; height:25px; border-radius: 5px;" onclick="addOrderDetail()">Add Order Detail</button>
+        <button style="background-color: green; color:white; margin-top:10px; height:25px; border-radius: 5px;" th:onclick="'clearFields();'">Clear</button>
+        <button style="background-color: green; color:white; margin-top:10px; height:25px; border-radius: 5px;" th:onclick="'location.reload()'">Refresh</button><br>
+        <label style="font-weight:bold; color:black margin-top:10px; margin-left:350px; font-size:20px;">Final Total</label>
+        <input
+                style="width:100px; font-weight:bold; height:20px;"
+                type="number"
+                name="total"
+                th:field="*{total}"
+                id="totalAmount"
+                class="form-control"
+                placeholder="Enter total"/> <br>
+        <script>
+                    function updateTotalAmount(amount) {
+                        var amount=parseInt($('input[name="orderDetailsSaveDTOS[0].amount"]').val() || 0);
+                        var sellPrice = document.getElementsByName("sellPrice")[0].value;
+                        var qty = document.getElementsByName("orderDetailsSaveDTOS[0].qty")[0].value;
+                        var amount = sellPrice * qty;
+                        document.getElementsByName("orderDetailsSaveDTOS[0].amount")[0].value = amount;
+                        $('#totalAmount').val(amount);
+                    }
+                     function clearFields() {
+                          document.getElementById("myForm").reset();
+                     }
+        </script>
+    </div>
+    <div class="form-group">
+        <button type="submit" style="background-color: green; color:white; margin-top:10px; height:25px; border-radius: 5px;">Save Order</button>
+    </div>
+   </form>
+ </div>
+<script>
+    var counter=0;
+    function addOrderDetail() {
+        counter++;
+        var html = '<div class="row"><div class="col" style="width: 18%; display: inline-block;">'+
+                    '<input type="text" name="orderDetailsSaveDTOS[' + counter + '].itemName" class="form-control" placeholder="Enter item name" required style="height:23px;"></div>'+
+                    '<div class="col" style="width: 18%; display: inline-block;">'+
+                    '<input type="number" name="sellPrice" class="form-control" placeholder="Enter price" required style="height:23px; margin-left:4px;" ></div>'+
+                    '<div class="col" style="width: 18%; display: inline-block;">'+
+                    '<input type="number" name="orderDetailsSaveDTOS[' + counter + '].qty" class="form-control qty" placeholder="Enter quantity" required style="height:23px; margin-left:8px;"></div>'+
+                    '<div class="col" style="width: 18%; display: inline-block;">'+
+                    '<input type="number" name="orderDetailsSaveDTOS[' + counter + '].amount" class="form-control amount" placeholder="Enter amount" required style="height:23px; margin-left:12px;"></div>'+
+                    '<div class="col" style="width: 18%; display: inline-block;">'+
+                    '<input type="number" name="orderDetailsSaveDTOS[' + counter + '].item" class="form-control" placeholder="Enter id" required style="height:23px; margin-left:16px;"></div></div>';
+        $('#orderDetails').append(html);
+        $(".sellPrice, .qty").on("keyup", function () {
+            calculateAmount($(this));
+            calculateTotalAmount();
+        });
+
+        function calculateAmount(el) {
+            var sellPrice = parseInt(el.closest('.row').find(".sellPrice").val() || 0);
+            var qty = parseInt(el.closest('.row').find(".qty").val() || 0);
+            var amount = sellPrice * qty;
+            el.closest('.row').find(".amount").val(amount);
+        }
+
+        function calculateTotalAmount() {
+                 var total=parseInt($('input[name="orderDetailsSaveDTOS[0].amount"]').val() || 0);
+                 $('.amount').each(function() {
+                 total += parseInt($(this).val() || 0);
+            });
+            $('#totalAmount').val(total);
+         }
+     }
+    $('form').submit(function () {
+    var data = $(this).serialize();
+    $.ajax({
+        type: 'POST',
+        url: '/saveOrder',
+        data: data,
+        success: function (response) {
+            console.log(response);
+            var total = 0;
+            $('#orderDetailsTable').empty();
+            response.forEach(function (item) {
+                var row = '<tr><td>' + item.itemName + '</td><td>' + item.qty + '</td><td>' + item.amount + '</td><td>' + item.item + '</td></tr>';
+                $('#orderDetailsTable').append(row);
+                total += parseInt(item.amount);
+            });
+            $('#totalAmount').text(total);
+        },
+        error: function (error) {
+            console.log(error);
+        }
+    });
+    return false;
+});
+</script>
+</body>
+</html>
+
+
+
+
+
+
